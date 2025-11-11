@@ -1,0 +1,25 @@
+{
+  "name": "handyman",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Handyman (Qatar) — freelance marketplace for home services",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=18.18"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:api": "npm --workspace apps/api run dev",
+    "build:api": "npm --workspace apps/api run build",
+    "start:api": "npm --workspace apps/api start",
+    "dev:web": "npm --workspace apps/web run dev",
+    "build:web": "npm --workspace apps/web run build",
+    "start:web": "npm --workspace apps/web start",
+    "dev:mobile": "npm --workspace apps/mobile run dev"
+  }
+}
+
+
