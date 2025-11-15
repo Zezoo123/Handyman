@@ -8,14 +8,13 @@
   },
   "dependencies": {
     "expo": "^51.0.0",
-    "react": "18.3.1",
+    "react": "18.2.0",
     "react-native": "0.74.2",
     "expo-status-bar": "~1.12.1"
   },
   "devDependencies": {
     "typescript": "^5.4.0",
-    "@types/react": "^18.2.66",
-    "@types/react-native": "^0.73.0"
+    "@types/react": "^18.2.66"
   }
 }
 

@@ -1,0 +1,176 @@
+// datasource and generator
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Core models
+model User {
+  id              String           @id @default(cuid())
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  email           String?          @unique
+  phone           String?          @unique
+  fullName        String
+  role            UserRole         @default(CUSTOMER)
+  providerProfile ProviderProfile?
+  jobs            Job[]            @relation("CustomerJobs")
+  reviews         Review[]         @relation("CustomerReviews")
+}
+
+enum UserRole {
+  CUSTOMER
+  PROVIDER
+  ADMIN
+}
+
+model ProviderProfile {
+  id            String    @id @default(cuid())
+  user          User      @relation(fields: [userId], references: [id])
+  userId        String    @unique
+  bio           String?
+  skills        String[]  // free-form tags initially (e.g., ["plumbing","electricity"])
+  verified      Boolean   @default(false)
+  avgRating     Float?    @default(0)
+  completedJobs Int       @default(0)
+  bids          Bid[]
+  jobs          Job[]     @relation("ProviderJobs")
+}
+
+model Category {
+  id        String @id @default(cuid())
+  name      String @unique
+  slug      String @unique
+  jobs      Job[]
+  createdAt DateTime @default(now())
+}
+
+model Service {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  slug        String      @unique
+  icon        String?     // optional icon identifier
+  subServices SubService[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model SubService {
+  id            String         @id @default(cuid())
+  name          String
+  slug          String
+  description   String?
+  service       Service        @relation(fields: [serviceId], references: [id])
+  serviceId     String
+  pricingConfig PricingConfig?
+  jobs          Job[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@unique([serviceId, slug])
+}
+
+model PricingConfig {
+  id          String      @id @default(cuid())
+  subService  SubService  @relation(fields: [subServiceId], references: [id])
+  subServiceId String     @unique
+  basePrice   Int?        // base price in QAR (optional)
+  sizeOptions Json        // [{ size: "40m²", price: 100 }, { size: "60m²", price: 150 }, ...]
+  equipmentOptions Json   // [{ name: "Bring own equipment", price: 30 }, ...]
+  addons      Json        // [{ name: "Curtain cleaning", price: 50 }, ...]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Job {
+  id            String        @id @default(cuid())
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  title         String
+  description   String
+  status        JobStatus     @default(REQUESTED)
+  scheduledAt   DateTime?
+  locationText  String?
+  category      Category?     @relation(fields: [categoryId], references: [id])
+  categoryId    String?
+  subService    SubService?   @relation(fields: [subServiceId], references: [id])
+  subServiceId String?
+  customer      User          @relation("CustomerJobs", fields: [customerId], references: [id])
+  customerId    String
+  provider      ProviderProfile? @relation("ProviderJobs", fields: [providerId], references: [id])
+  providerId    String?
+  // Pricing selections
+  selectedSize  String?       // e.g., "40m²", "60m²", "80m²", "100m²+"
+  selectedEquipment Json?      // array of selected equipment option IDs/names
+  selectedAddons Json?         // array of selected addon IDs/names
+  estimatedPriceQAR Int?       // calculated total price
+  bids          Bid[]
+  payment       Payment?
+  review        Review?
+}
+
+enum JobStatus {
+  REQUESTED
+  ACCEPTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model Bid {
+  id         String           @id @default(cuid())
+  createdAt  DateTime         @default(now())
+  amountQAR  Int
+  message    String?
+  job        Job              @relation(fields: [jobId], references: [id])
+  jobId      String
+  provider   ProviderProfile  @relation(fields: [providerId], references: [id])
+  providerId String
+  status     BidStatus        @default(PENDING)
+}
+
+enum BidStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+model Payment {
+  id             String    @id @default(cuid())
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  job            Job       @relation(fields: [jobId], references: [id])
+  jobId          String    @unique
+  amountQAR      Int
+  currency       String    @default("QAR")
+  status         PaymentStatus @default(PENDING)
+  provider       String    // gateway name (e.g., "checkout", "tap", "stripe")
+  providerRef    String?   // gateway charge/intent id
+  receiptUrl     String?
+}
+
+enum PaymentStatus {
+  PENDING
+  AUTHORIZED
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now())
+  job        Job      @relation(fields: [jobId], references: [id])
+  jobId      String   @unique
+  customer   User     @relation("CustomerReviews", fields: [customerId], references: [id])
+  customerId String
+  rating     Int
+  comment    String?
+}
+
+

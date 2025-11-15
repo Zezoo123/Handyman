@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import { apiRouter } from "./routes/index.js";
 
 // Load env from .env if present (optional in dev)
 dotenv.config();
@@ -22,6 +23,8 @@ app.get("/health", (_req: Request, res: Response) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+app.use("/api", apiRouter);
 
 const port = Number(process.env.PORT || 4000);
 app.listen(port, () => {
